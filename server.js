@@ -3,11 +3,15 @@ const { v4: uuidv4 } = require('uuid');
 const fs         = require('fs');
 const path       = require('path');
 const nodemailer = require('nodemailer');
+const crypto     = require('crypto');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_KEY         = process.env.ADMIN_KEY || 'dtc2024';
-const DATA_DIR          = path.join(__dirname, 'data');
+const DATA_DIR          = process.env.DATA_DIR
+                          || (process.env.NODE_ENV === 'production'
+                              ? '/opt/render/project/src/data'
+                              : path.join(__dirname, 'data'));
 const TOKENS_FILE       = path.join(DATA_DIR, 'tokens.json');
 const SESSIONS_FILE     = path.join(DATA_DIR, 'sessions.txt');
 const EMAIL_CONFIG      = path.join(DATA_DIR, 'emailConfig.json');
@@ -161,8 +165,7 @@ const savePayments    = p  => fs.writeFileSync(PAYMENTS_FILE, JSON.stringify(p, 
 const loadAdmins      = () => { try { return JSON.parse(fs.readFileSync(ADMINS_FILE,'utf8')); } catch { return []; } };
 const saveAdmins      = a  => fs.writeFileSync(ADMINS_FILE, JSON.stringify(a, null, 2));
 
-// ── Simple password hashing (SHA-256 + salt, no bcrypt dependency) ─────────────
-const crypto          = require('crypto');
+// ── Simple password hashing (SHA-256 + salt) ───────────────────────────────────
 function _hashPassword(plain) {
   const salt = crypto.randomBytes(16).toString('hex');
   const hash = crypto.createHash('sha256').update(salt + plain).digest('hex');
