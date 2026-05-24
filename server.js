@@ -153,7 +153,19 @@ const loadNotify      = () => JSON.parse(fs.readFileSync(NOTIFY_FILE,  'utf8'));
 const saveNotify      = n  => fs.writeFileSync(NOTIFY_FILE,  JSON.stringify(n, null, 2));
 const loadProducts    = () => JSON.parse(fs.readFileSync(PRODUCTS_FILE,'utf8'));
 const saveProducts    = p  => fs.writeFileSync(PRODUCTS_FILE, JSON.stringify(p, null, 2));
-const isAdmin         = k  => k === ADMIN_KEY;
+const isAdmin = (k) => {
+  if (!k) return false;
+  // Legacy single key
+  if (k === ADMIN_KEY) return true;
+  // Session token
+  const sessions = loadSessionsMap();
+  const session  = sessions[k];
+  if (!session) return false;
+  if (Date.now() > session.expiresAt) return false;
+  const users = loadUsers();
+  const user  = users.find(u => u.id === session.userId && u.active);
+  return !!user;
+};
 const loadTemplates   = () => JSON.parse(fs.readFileSync(TEMPLATES_FILE,'utf8'));
 const saveTemplates   = t  => fs.writeFileSync(TEMPLATES_FILE, JSON.stringify(t, null, 2));
 const loadSettings    = () => JSON.parse(fs.readFileSync(SETTINGS_FILE,'utf8'));
